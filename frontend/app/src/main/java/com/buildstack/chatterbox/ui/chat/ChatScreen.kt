@@ -1,8 +1,15 @@
 package com.buildstack.chatterbox.ui.chat
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.launch
+import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -18,16 +25,32 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    viewModel: ChatViewModel = viewModel()
 ) {
-    var messageText by remember { mutableStateOf("") }
+    val messages by viewModel.messages.collectAsState()
+    val isTyping by viewModel.isTyping.collectAsState()
+    val inputText by viewModel.inputText.collectAsState()
+    
+    val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
+        // Handle bitmap
+    }
+    
+    val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        // Handle uri
+    }
 
     Scaffold(
         topBar = {
@@ -46,8 +69,15 @@ fun ChatScreen(
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text("cool_dev_99", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                            Text("Typing...", fontSize = 12.sp, color = Color(0xFFBDFF00))
+                            if (isTyping) {
+                                Text("Typing...", fontSize = 12.sp, color = Color(0xFFBDFF00))
+                            } else {
+                                Text("Online", fontSize = 12.sp, color = Color.Gray)
+                            }
                         }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        // Green dot indicator for online status
+                        Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(Color(0xFFBDFF00)))
                     }
                 },
                 navigationIcon = {
@@ -76,15 +106,15 @@ fun ChatScreen(
                     .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = { /* Camera */ }) {
+                IconButton(onClick = { cameraLauncher.launch() }) {
                     Icon(Icons.Default.CameraAlt, contentDescription = "Camera", tint = Color(0xFFC2CAAD))
                 }
-                IconButton(onClick = { /* Gallery */ }) {
+                IconButton(onClick = { galleryLauncher.launch("image/*") }) {
                     Icon(Icons.Default.Photo, contentDescription = "Gallery", tint = Color(0xFFC2CAAD))
                 }
                 OutlinedTextField(
-                    value = messageText,
-                    onValueChange = { messageText = it },
+                    value = inputText,
+                    onValueChange = { viewModel.onInputTextChanged(it) },
                     placeholder = { Text("Message...", color = Color(0xFF8C9479)) },
                     modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
                     shape = RoundedCornerShape(24.dp),
@@ -98,7 +128,7 @@ fun ChatScreen(
                     )
                 )
                 IconButton(
-                    onClick = { /* Send */ },
+                    onClick = { viewModel.sendMessage() },
                     modifier = Modifier.background(Color(0xFFBDFF00), CircleShape)
                 ) {
                     Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send", tint = Color.Black)
@@ -115,10 +145,49 @@ fun ChatScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             reverseLayout = true
         ) {
-            // Dummy messages
             item { Spacer(modifier = Modifier.height(16.dp)) }
-            item { SentMessage("I'm doing well, working on the app! 😎") }
-            item { ReceivedMessage("Hey! How are you?") }
+            items(messages) { msg ->
+                SwipeToReplyMessage(msg)
+            }
+        }
+    }
+}
+
+@Composable
+fun SwipeToReplyMessage(message: Message) {
+    val offsetX = remember { Animatable(0f) }
+    val coroutineScope = rememberCoroutineScope()
+    
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .pointerInput(Unit) {
+                detectHorizontalDragGestures(
+                    onDragEnd = {
+                        coroutineScope.launch {
+                            if (offsetX.value < -100f) {
+                                // Trigger reply action here
+                            }
+                            offsetX.animateTo(0f) // Micro-interaction snap back
+                        }
+                    }
+                ) { change, dragAmount ->
+                    if (dragAmount < 0 || offsetX.value < 0) { // only swipe left
+                        coroutineScope.launch {
+                            offsetX.snapTo(offsetX.value + dragAmount)
+                        }
+                    }
+                }
+            }
+    ) {
+        Box(
+            modifier = Modifier.offset { IntOffset(offsetX.value.roundToInt(), 0) }
+        ) {
+            if (message.isMine) {
+                SentMessage(message.text)
+            } else {
+                ReceivedMessage(message.text)
+            }
         }
     }
 }
