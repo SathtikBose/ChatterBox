@@ -5,7 +5,8 @@ import rateLimit from 'express-rate-limit';
 // @ts-ignore
 import xss from 'xss-clean';
 import authRoutes from './routes/auth';
-
+import userRoutes from './routes/userRoutes';
+import chatRoutes from './routes/chatRoutes';
 const app = express();
 
 app.use(helmet());
@@ -20,6 +21,8 @@ const limiter = rateLimit({
 app.use(limiter);
 
 app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/chats', chatRoutes);
 
 app.get('/', (req, res) => {
   res.send('API is running...');
