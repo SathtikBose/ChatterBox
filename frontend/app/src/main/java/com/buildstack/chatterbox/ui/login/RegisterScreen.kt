@@ -15,12 +15,12 @@ import androidx.compose.ui.unit.sp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginScreen(
-    onLoginSuccess: () -> Unit,
-    onNavigateToRegister: () -> Unit,
-    onNavigateToForgotPassword: () -> Unit
+fun RegisterScreen(
+    onRegisterSuccess: () -> Unit,
+    onNavigateToLogin: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
+    var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
     Column(
@@ -31,15 +31,32 @@ fun LoginScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text("Chatter Box", fontSize = 40.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
+        Text("Join Chatter Box", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Color(0xFFBDFF00))
         Spacer(modifier = Modifier.height(8.dp))
-        Text("Connect with your vibe.", color = Color(0xFFBDFF00))
-        Spacer(modifier = Modifier.height(48.dp))
+        Text("Create an account to start chatting", color = Color(0xFF8C9479))
+        Spacer(modifier = Modifier.height(32.dp))
         
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
             label = { Text("Email", color = Color(0xFF8C9479)) },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color(0xFFBDFF00),
+                unfocusedBorderColor = Color(0xFF434933),
+                focusedContainerColor = Color(0xFF1B1B20),
+                unfocusedContainerColor = Color(0xFF1B1B20),
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color.White
+            )
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        OutlinedTextField(
+            value = username,
+            onValueChange = { username = it },
+            label = { Text("Username", color = Color(0xFF8C9479)) },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
             colors = OutlinedTextFieldDefaults.colors(
@@ -69,29 +86,22 @@ fun LoginScreen(
                 unfocusedTextColor = Color.White
             )
         )
-        
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-            TextButton(onClick = onNavigateToForgotPassword) {
-                Text("Forgot Password?", color = Color(0xFFC2CAAD))
-            }
-        }
-        
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(32.dp))
         
         Button(
-            onClick = onLoginSuccess,
+            onClick = onRegisterSuccess,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
             shape = RoundedCornerShape(16.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFBDFF00))
         ) {
-            Text("Login", color = Color.Black, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Text("Sign Up", color = Color.Black, fontSize = 16.sp, fontWeight = FontWeight.Bold)
         }
         Spacer(modifier = Modifier.height(16.dp))
         
-        TextButton(onClick = onNavigateToRegister) {
-            Text("Don't have an account? Register", color = Color(0xFFBDFF00))
+        TextButton(onClick = onNavigateToLogin) {
+            Text("Already have an account? Log in", color = Color(0xFFBDFF00))
         }
     }
 }

@@ -9,6 +9,8 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import com.buildstack.chatterbox.ui.login.LoginScreen
+import com.buildstack.chatterbox.ui.login.RegisterScreen
+import com.buildstack.chatterbox.ui.login.ForgotPasswordScreen
 import com.buildstack.chatterbox.ui.friends.FriendsScreen
 import com.buildstack.chatterbox.ui.chat.ChatScreen
 import com.buildstack.chatterbox.ui.profile.ProfileScreen
@@ -25,7 +27,20 @@ fun MainNavigation() {
         entry<Login> {
           LoginScreen(
             onLoginSuccess = { backStack.add(Friends) },
-            onNavigateToRegister = { /* TODO */ }
+            onNavigateToRegister = { backStack.add(Register) },
+            onNavigateToForgotPassword = { backStack.add(ForgotPassword) }
+          )
+        }
+        entry<Register> {
+          RegisterScreen(
+            onRegisterSuccess = { backStack.add(Friends) },
+            onNavigateToLogin = { backStack.removeLastOrNull() }
+          )
+        }
+        entry<ForgotPassword> {
+          ForgotPasswordScreen(
+            onNavigateBack = { backStack.removeLastOrNull() },
+            onSendOtp = { email -> /* TODO: Navigate to OTP verification or show toast */ }
           )
         }
         entry<Friends> {
