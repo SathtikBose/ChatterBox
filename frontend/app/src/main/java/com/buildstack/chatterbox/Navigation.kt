@@ -8,19 +8,51 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
-import com.buildstack.chatterbox.ui.main.MainScreen
+import com.buildstack.chatterbox.ui.login.LoginScreen
+import com.buildstack.chatterbox.ui.friends.FriendsScreen
+import com.buildstack.chatterbox.ui.chat.ChatScreen
+import com.buildstack.chatterbox.ui.profile.ProfileScreen
 
 @Composable
 fun MainNavigation() {
-  val backStack = rememberNavBackStack(Main)
+  val backStack = rememberNavBackStack(Login)
 
   NavDisplay(
     backStack = backStack,
     onBack = { backStack.removeLastOrNull() },
     entryProvider =
       entryProvider {
-        entry<Main> {
-          MainScreen(onItemClick = { navKey -> backStack.add(navKey) }, modifier = Modifier.safeDrawingPadding().padding(16.dp))
+        entry<Login> {
+          LoginScreen(
+            onLoginSuccess = { backStack.add(Friends) },
+            onNavigateToRegister = { /* TODO */ }
+          )
+        }
+        entry<Friends> {
+          FriendsScreen(
+            onNavigateBack = { backStack.removeLastOrNull() },
+            onNavigateToChat = { friendId -> backStack.add(Chat(friendId)) },
+            onNavigateToProfile = { backStack.add(Profile) }
+          )
+        }
+        entry<Chat> { navKey ->
+          ChatScreen(
+            friendId = navKey.friendId,
+            onNavigateBack = { backStack.removeLastOrNull() }
+          )
+        }
+        entry<Profile> {
+          ProfileScreen(
+            onNavigateBack = { backStack.removeLastOrNull() },
+            onLogout = {
+                // Clear backstack and go to login
+                while(backStack.size > 1) { backStack.removeLastOrNull() }
+                if(backStack.size == 1 && backStack.first() != Login) {
+                    backStack.removeLastOrNull()
+                    backStack.add(Login)
+                }
+            }
+          )
         }
       },
   )

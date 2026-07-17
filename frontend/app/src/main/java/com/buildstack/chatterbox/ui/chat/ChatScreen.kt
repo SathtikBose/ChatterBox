@@ -37,6 +37,7 @@ import kotlin.math.roundToInt
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(
+    friendId: String,
     onNavigateBack: () -> Unit,
     viewModel: ChatViewModel = viewModel()
 ) {

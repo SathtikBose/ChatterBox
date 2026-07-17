@@ -22,7 +22,9 @@ import androidx.compose.ui.unit.sp
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FriendsScreen(
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onNavigateToChat: (String) -> Unit,
+    onNavigateToProfile: () -> Unit
 ) {
     var searchQuery by remember { mutableStateOf("") }
 
@@ -39,7 +41,12 @@ fun FriendsScreen(
                     containerColor = Color(0xFF131318),
                     titleContentColor = Color(0xFFE4E1E9),
                     navigationIconContentColor = Color(0xFFE4E1E9)
-                )
+                ),
+                actions = {
+                    IconButton(onClick = onNavigateToProfile) {
+                        Icon(Icons.Default.Person, contentDescription = "Profile", tint = Color(0xFFBDFF00))
+                    }
+                }
             )
         },
         containerColor = Color(0xFF131318)
@@ -89,7 +96,10 @@ fun FriendsScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 items(3) { index ->
-                    SearchResultItem(username = "user_$index")
+                    SearchResultItem(
+                        username = "user_$index",
+                        onChatClick = { onNavigateToChat("user_$index") }
+                    )
                 }
             }
         }
@@ -135,7 +145,10 @@ fun FriendRequestItem(username: String) {
 }
 
 @Composable
-fun SearchResultItem(username: String) {
+fun SearchResultItem(
+    username: String,
+    onChatClick: () -> Unit = {}
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -158,13 +171,13 @@ fun SearchResultItem(username: String) {
         }
         
         Button(
-            onClick = { /* Invite */ },
+            onClick = onChatClick,
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF35343A), contentColor = Color.White),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
             modifier = Modifier.height(36.dp)
         ) {
-            Text("Invite")
+            Text("Chat")
         }
     }
 }
