@@ -113,11 +113,12 @@ fun FriendsScreen(
                     CircularProgressIndicator(color = Color(0xFFBDFF00))
                 }
             } else if (searchQuery.isNotBlank() && friendsState is FriendsState.UsersLoaded) {
+                val loadedState = friendsState as FriendsState.UsersLoaded
                 Text("Search Results", color = Color(0xFFC2CAAD), fontSize = 14.sp, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(16.dp))
 
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    items((friendsState as FriendsState.UsersLoaded).users) { user ->
+                    items(loadedState.users) { user ->
                         SearchResultItem(
                             username = user.username,
                             onChatClick = { viewModel.accessChat(user._id) }
@@ -125,11 +126,12 @@ fun FriendsScreen(
                     }
                 }
             } else if (searchQuery.isBlank() && friendsState is FriendsState.ChatsLoaded) {
+                val loadedState = friendsState as FriendsState.ChatsLoaded
                 Text("Recent Chats", color = Color(0xFFC2CAAD), fontSize = 14.sp, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(16.dp))
 
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    val chats = (friendsState as FriendsState.ChatsLoaded).chats
+                    val chats = loadedState.chats
                     if (chats.isEmpty()) {
                         item {
                             Text("No recent chats. Search for friends to start chatting!", color = Color.Gray)
