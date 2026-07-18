@@ -29,8 +29,8 @@ class SocketManager {
                 auth = mutableMapOf<String, String>("token" to token)
                 transports = arrayOf(io.socket.engineio.client.transports.WebSocket.NAME)
             }
-            // Assuming localhost for backend. Android emulator uses 10.0.2.2 for localhost
-            mSocket = IO.socket("http://10.0.2.2:5000", options)
+            // Remote backend
+            mSocket = IO.socket("https://chatterbox-6w3a.onrender.com/", options)
             
             mSocket?.on(Socket.EVENT_CONNECT) {
                 Log.d("SocketManager", "Connected to Socket.IO server")
