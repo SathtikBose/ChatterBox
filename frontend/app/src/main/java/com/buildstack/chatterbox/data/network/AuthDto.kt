@@ -1,14 +1,15 @@
 package com.buildstack.chatterbox.data.network
 
+import com.google.gson.annotations.SerializedName
 data class RegisterRequest(
     val email: String,
     val username: String,
-    val passwordHash: String
+    @SerializedName("password") val passwordHash: String
 )
 
 data class LoginRequest(
     val email: String,
-    val passwordHash: String
+    @SerializedName("password") val passwordHash: String
 )
 
 data class ForgotPasswordRequest(
