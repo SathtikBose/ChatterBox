@@ -61,7 +61,16 @@ data class MessageDto(
         } catch (e: Exception) { null }
 
     val chatIdString: String?
-        get() = if (chatElement?.isJsonPrimitive == true) chatElement.asString else chat?._id
+        get() {
+            if (chatElement == null) return null
+            if (chatElement.isJsonPrimitive == true) return chatElement.asString
+            if (chatElement.isJsonObject == true) {
+                try {
+                    return chatElement.asJsonObject.get("_id")?.asString
+                } catch (e: Exception) { return null }
+            }
+            return null
+        }
 }
 
 data class SendMessageRequest(
