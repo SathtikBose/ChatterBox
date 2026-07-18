@@ -165,6 +165,7 @@ fun FriendsScreen(
         }
     }
 }
+}
 
 @Composable
 fun SearchResultItem(
