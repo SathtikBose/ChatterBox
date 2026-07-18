@@ -49,10 +49,20 @@ data class MessageDto(
     val _id: String,
     val sender: UserDto,
     @SerializedName("text") val content: String,
-    @SerializedName("chatId") val chat: ChatDto?,
+    @SerializedName("chatId") val chatElement: com.google.gson.JsonElement?,
     val imageUrl: String? = null,
     val createdAt: String
-)
+) {
+    val chat: ChatDto?
+        get() = try {
+            if (chatElement?.isJsonObject == true) {
+                com.google.gson.Gson().fromJson(chatElement, ChatDto::class.java)
+            } else null
+        } catch (e: Exception) { null }
+
+    val chatIdString: String?
+        get() = if (chatElement?.isJsonPrimitive == true) chatElement.asString else chat?._id
+}
 
 data class SendMessageRequest(
     val chatId: String,

@@ -55,7 +55,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         
         viewModelScope.launch {
             socketManager.newMessage.collect { msg ->
-                if (msg != null && msg.chat?._id == currentChatId) {
+                if (msg != null && msg.chatIdString == currentChatId) {
                     val currentList = _messages.value.toMutableList()
                     if (!currentList.any { it._id == msg._id }) {
                         _messages.value = currentList + msg
