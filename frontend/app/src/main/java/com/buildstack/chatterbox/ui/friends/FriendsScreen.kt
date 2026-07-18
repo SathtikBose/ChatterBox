@@ -22,6 +22,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.lifecycle.viewmodel.compose.viewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -78,12 +79,24 @@ fun FriendsScreen(
         },
         containerColor = Color(0xFF131318)
     ) { paddingValues ->
-        Column(
+        PullToRefreshBox(
+            isRefreshing = friendsState == FriendsState.Loading,
+            onRefresh = { 
+                if (searchQuery.isNotBlank()) {
+                    viewModel.searchUsers(searchQuery)
+                } else {
+                    viewModel.fetchChats()
+                }
+            },
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 24.dp)
         ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 24.dp)
+            ) {
             Spacer(modifier = Modifier.height(16.dp))
 
             // Search Bar

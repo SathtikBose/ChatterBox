@@ -3,14 +3,14 @@ import User from '../models/User';
 
 export const searchUsers = async (req: Request, res: Response) => {
   try {
-    const { query } = req.query;
-    if (!query) return res.status(400).json({ message: 'Query is required' });
+    const searchQuery = req.query.search || req.query.query;
+    if (!searchQuery) return res.status(400).json({ message: 'Search term is required' });
 
     // @ts-ignore
     const currentUserId = req.user._id;
 
     const users = await User.find({
-      username: { $regex: query, $options: 'i' },
+      username: { $regex: searchQuery, $options: 'i' },
       _id: { $ne: currentUserId }
     } as any).select('-password');
 
