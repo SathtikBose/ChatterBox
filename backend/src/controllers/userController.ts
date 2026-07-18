@@ -39,3 +39,30 @@ export const blockUser = async (req: Request, res: Response) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+export const updateProfile = async (req: Request, res: Response) => {
+  try {
+    // @ts-ignore
+    const currentUserId = req.user._id;
+    const { username, profilePic } = req.body;
+
+    const user = await User.findById(currentUserId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (username) user.username = username;
+    if (profilePic) user.profilePic = profilePic;
+
+    await user.save();
+
+    res.json({
+      _id: user._id,
+      username: user.username,
+      email: user.email,
+      profilePic: user.profilePic,
+    });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
