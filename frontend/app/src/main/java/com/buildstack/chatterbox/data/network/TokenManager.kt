@@ -18,15 +18,26 @@ class TokenManager(context: Context) {
         EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
     )
 
-    fun saveToken(token: String) {
-        sharedPreferences.edit().putString("jwt_token", token).apply()
+    fun saveToken(token: String, userId: String, username: String, email: String, profilePic: String) {
+        sharedPreferences.edit()
+            .putString("jwt_token", token)
+            .putString("user_id", userId)
+            .putString("username", username)
+            .putString("email", email)
+            .putString("profile_pic", profilePic)
+            .apply()
     }
 
     fun getToken(): String? {
         return sharedPreferences.getString("jwt_token", null)
     }
 
+    fun getUserId(): String? = sharedPreferences.getString("user_id", null)
+    fun getUsername(): String? = sharedPreferences.getString("username", null)
+    fun getEmail(): String? = sharedPreferences.getString("email", null)
+    fun getProfilePic(): String? = sharedPreferences.getString("profile_pic", null)
+
     fun clearToken() {
-        sharedPreferences.edit().remove("jwt_token").apply()
+        sharedPreferences.edit().clear().apply()
     }
 }

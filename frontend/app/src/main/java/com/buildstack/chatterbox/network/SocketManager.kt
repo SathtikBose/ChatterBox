@@ -14,6 +14,13 @@ class SocketManager {
     private val _isConnected = MutableStateFlow(false)
     val isConnected: StateFlow<Boolean> = _isConnected
 
+    // Expose flows for events
+    private val _userOnline = MutableStateFlow<String?>(null)
+    val userOnline: StateFlow<String?> = _userOnline
+
+    private val _userOffline = MutableStateFlow<String?>(null)
+    val userOffline: StateFlow<String?> = _userOffline
+
     fun connect(token: String) {
         if (mSocket?.connected() == true) return
         
@@ -39,10 +46,34 @@ class SocketManager {
                 Log.e("SocketManager", "Connection Error: ${args.contentToString()}")
             }
 
+            // Presence Listeners
+            mSocket?.on("user online") { args ->
+                if (args.isNotEmpty()) {
+                    _userOnline.value = args[0] as? String
+                }
+            }
+
+            mSocket?.on("user offline") { args ->
+                if (args.isNotEmpty()) {
+                    _userOffline.value = args[0] as? String
+                }
+            }
+
             mSocket?.connect()
         } catch (e: URISyntaxException) {
             e.printStackTrace()
         }
+    }
+
+    fun setupUser(userId: String) {
+        val json = JSONObject().apply {
+            put("_id", userId)
+        }
+        mSocket?.emit("setup", json)
+    }
+
+    fun joinChat(chatId: String) {
+        mSocket?.emit("join chat", chatId)
     }
 
     fun disconnect() {

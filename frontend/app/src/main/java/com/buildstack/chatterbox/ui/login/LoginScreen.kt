@@ -1,5 +1,6 @@
 package com.buildstack.chatterbox.ui.login
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -8,20 +9,40 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
     onLoginSuccess: () -> Unit,
     onNavigateToRegister: () -> Unit,
-    onNavigateToForgotPassword: () -> Unit
+    onNavigateToForgotPassword: () -> Unit,
+    viewModel: AuthViewModel = viewModel()
 ) {
+    val context = LocalContext.current
+    val authState by viewModel.authState.collectAsState()
+    
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+
+    LaunchedEffect(authState) {
+        when (authState) {
+            is AuthState.Success -> {
+                viewModel.resetState()
+                onLoginSuccess()
+            }
+            is AuthState.Error -> {
+                Toast.makeText(context, (authState as AuthState.Error).message, Toast.LENGTH_SHORT).show()
+                viewModel.resetState()
+            }
+            else -> {}
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -79,14 +100,25 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(16.dp))
         
         Button(
-            onClick = onLoginSuccess,
+            onClick = {
+                if (email.isBlank() || password.isBlank()) {
+                    Toast.makeText(context, "Please fill in all fields", Toast.LENGTH_SHORT).show()
+                } else {
+                    viewModel.login(email, password)
+                }
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
             shape = RoundedCornerShape(16.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFBDFF00))
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFBDFF00)),
+            enabled = authState != AuthState.Loading
         ) {
-            Text("Login", color = Color.Black, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            if (authState == AuthState.Loading) {
+                CircularProgressIndicator(color = Color.Black, modifier = Modifier.size(24.dp))
+            } else {
+                Text("Login", color = Color.Black, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            }
         }
         Spacer(modifier = Modifier.height(16.dp))
         

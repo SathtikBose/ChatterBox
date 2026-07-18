@@ -39,9 +39,15 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 val response = apiService.login(LoginRequest(email, passwordHash))
                 if (response.isSuccessful && response.body() != null) {
-                    val token = response.body()!!.token
-                    tokenManager.saveToken(token)
-                    _authState.value = AuthState.Success(token)
+                    val authResponse = response.body()!!
+                    tokenManager.saveToken(
+                        authResponse.token,
+                        authResponse._id,
+                        authResponse.username,
+                        authResponse.email,
+                        authResponse.profilePic
+                    )
+                    _authState.value = AuthState.Success(authResponse.token)
                 } else {
                     _authState.value = AuthState.Error("Login failed: ${response.message()}")
                 }
@@ -57,9 +63,15 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 val response = apiService.register(RegisterRequest(email, username, passwordHash))
                 if (response.isSuccessful && response.body() != null) {
-                    val token = response.body()!!.token
-                    tokenManager.saveToken(token)
-                    _authState.value = AuthState.Success(token)
+                    val authResponse = response.body()!!
+                    tokenManager.saveToken(
+                        authResponse.token,
+                        authResponse._id,
+                        authResponse.username,
+                        authResponse.email,
+                        authResponse.profilePic
+                    )
+                    _authState.value = AuthState.Success(authResponse.token)
                 } else {
                     _authState.value = AuthState.Error("Registration failed: ${response.message()}")
                 }

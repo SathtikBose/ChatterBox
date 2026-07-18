@@ -1,11 +1,10 @@
 package com.buildstack.chatterbox.ui.chat
 
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.result.launch
 import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -26,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -33,17 +33,20 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
+import com.buildstack.chatterbox.data.network.MessageDto
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(
-    friendId: String,
+    friendId: String, // This is actually the chatId now
     onNavigateBack: () -> Unit,
     viewModel: ChatViewModel = viewModel()
 ) {
+    val context = LocalContext.current
     val messages by viewModel.messages.collectAsState()
     val isTyping by viewModel.isTyping.collectAsState()
     val inputText by viewModel.inputText.collectAsState()
+    val chatState by viewModel.chatState.collectAsState()
     
     val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
         // Handle bitmap
@@ -51,6 +54,17 @@ fun ChatScreen(
     
     val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         // Handle uri
+    }
+
+    LaunchedEffect(friendId) {
+        viewModel.initializeChat(friendId)
+    }
+
+    LaunchedEffect(chatState) {
+        if (chatState is ChatState.Error) {
+            Toast.makeText(context, (chatState as ChatState.Error).message, Toast.LENGTH_SHORT).show()
+            viewModel.resetState()
+        }
     }
 
     Scaffold(
@@ -69,16 +83,25 @@ fun ChatScreen(
                         }
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
-                            Text("cool_dev_99", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            // Extract other user name from messages if available
+                            val otherUser = messages.firstOrNull { it.sender._id != viewModel.currentUserId }?.sender
+                            val titleName = otherUser?.username ?: "Chat"
+
+                            Text(titleName, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
                             if (isTyping) {
                                 Text("Typing...", fontSize = 12.sp, color = Color(0xFFBDFF00))
-                            } else {
+                            } else if (otherUser?.isOnline == true) {
                                 Text("Online", fontSize = 12.sp, color = Color.Gray)
+                            } else {
+                                Text("Offline", fontSize = 12.sp, color = Color.Gray)
                             }
                         }
                         Spacer(modifier = Modifier.width(8.dp))
                         // Green dot indicator for online status
-                        Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(Color(0xFFBDFF00)))
+                        val isOnline = messages.firstOrNull { it.sender._id != viewModel.currentUserId }?.sender?.isOnline == true
+                        if (isOnline) {
+                            Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(Color(0xFFBDFF00)))
+                        }
                     }
                 },
                 navigationIcon = {
@@ -107,7 +130,7 @@ fun ChatScreen(
                     .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = { cameraLauncher.launch() }) {
+                IconButton(onClick = { cameraLauncher.launch(null) }) {
                     Icon(Icons.Default.CameraAlt, contentDescription = "Camera", tint = Color(0xFFC2CAAD))
                 }
                 IconButton(onClick = { galleryLauncher.launch("image/*") }) {
@@ -138,24 +161,31 @@ fun ChatScreen(
         },
         containerColor = Color(0xFF131318)
     ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            reverseLayout = true
-        ) {
-            item { Spacer(modifier = Modifier.height(16.dp)) }
-            items(messages) { msg ->
-                SwipeToReplyMessage(msg)
+        if (chatState == ChatState.Loading) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = Color(0xFFBDFF00))
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                reverseLayout = true
+            ) {
+                item { Spacer(modifier = Modifier.height(16.dp)) }
+                // Reverse messages because LazyColumn is reversed
+                items(messages.reversed()) { msg ->
+                    SwipeToReplyMessage(msg, isMine = msg.sender._id == viewModel.currentUserId)
+                }
             }
         }
     }
 }
 
 @Composable
-fun SwipeToReplyMessage(message: Message) {
+fun SwipeToReplyMessage(message: MessageDto, isMine: Boolean) {
     val offsetX = remember { Animatable(0f) }
     val coroutineScope = rememberCoroutineScope()
     
@@ -184,10 +214,10 @@ fun SwipeToReplyMessage(message: Message) {
         Box(
             modifier = Modifier.offset { IntOffset(offsetX.value.roundToInt(), 0) }
         ) {
-            if (message.isMine) {
-                SentMessage(message.text)
+            if (isMine) {
+                SentMessage(message.content)
             } else {
-                ReceivedMessage(message.text)
+                ReceivedMessage(message.content)
             }
         }
     }

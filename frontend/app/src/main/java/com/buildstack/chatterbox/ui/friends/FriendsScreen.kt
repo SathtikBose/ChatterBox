@@ -1,8 +1,11 @@
 package com.buildstack.chatterbox.ui.friends
 
+import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -15,28 +18,52 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FriendsScreen(
     onNavigateBack: () -> Unit,
     onNavigateToChat: (String) -> Unit,
-    onNavigateToProfile: () -> Unit
+    onNavigateToProfile: () -> Unit,
+    viewModel: FriendsViewModel = viewModel()
 ) {
+    val context = LocalContext.current
     var searchQuery by remember { mutableStateOf("") }
+    val friendsState by viewModel.friendsState.collectAsState()
+
+    // Fetch initial chats
+    LaunchedEffect(Unit) {
+        viewModel.fetchChats()
+    }
+
+    LaunchedEffect(searchQuery) {
+        viewModel.searchUsers(searchQuery)
+    }
+
+    LaunchedEffect(friendsState) {
+        when (friendsState) {
+            is FriendsState.Error -> {
+                Toast.makeText(context, (friendsState as FriendsState.Error).message, Toast.LENGTH_SHORT).show()
+                viewModel.resetState()
+            }
+            is FriendsState.ChatAccessed -> {
+                val chatId = (friendsState as FriendsState.ChatAccessed).chatId
+                viewModel.resetState()
+                onNavigateToChat(chatId)
+            }
+            else -> {}
+        }
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Find Friends") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
-                },
+                title = { Text("Chats") },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color(0xFF131318),
                     titleContentColor = Color(0xFFE4E1E9),
@@ -81,64 +108,44 @@ fun FriendsScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
             
-            Text("Pending Requests", color = Color(0xFFC2CAAD), fontSize = 14.sp, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Dummy pending request
-            FriendRequestItem(username = "cool_dev_99")
-            
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Text("Search Results", color = Color(0xFFC2CAAD), fontSize = 14.sp, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(16.dp))
-
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                items(3) { index ->
-                    SearchResultItem(
-                        username = "user_$index",
-                        onChatClick = { onNavigateToChat("user_$index") }
-                    )
+            if (friendsState == FriendsState.Loading) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = Color(0xFFBDFF00))
                 }
-            }
-        }
-    }
-}
+            } else if (searchQuery.isNotBlank() && friendsState is FriendsState.UsersLoaded) {
+                Text("Search Results", color = Color(0xFFC2CAAD), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(16.dp))
 
-@Composable
-fun FriendRequestItem(username: String) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color(0xFF1B1B20), RoundedCornerShape(16.dp))
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .clip(CircleShape)
-                .background(Color(0xFF35343A)),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(Icons.Default.Person, contentDescription = null, tint = Color.White)
-        }
-        Spacer(modifier = Modifier.width(16.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(username, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-            Text("Wants to be friends", color = Color(0xFF8C9479), fontSize = 12.sp)
-        }
-        
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(
-                onClick = { /* Accept */ },
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFBDFF00), contentColor = Color.Black),
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                modifier = Modifier.height(36.dp)
-            ) {
-                Text("Accept")
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    items((friendsState as FriendsState.UsersLoaded).users) { user ->
+                        SearchResultItem(
+                            username = user.username,
+                            onChatClick = { viewModel.accessChat(user._id) }
+                        )
+                    }
+                }
+            } else if (searchQuery.isBlank() && friendsState is FriendsState.ChatsLoaded) {
+                Text("Recent Chats", color = Color(0xFFC2CAAD), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(16.dp))
+
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    val chats = (friendsState as FriendsState.ChatsLoaded).chats
+                    if (chats.isEmpty()) {
+                        item {
+                            Text("No recent chats. Search for friends to start chatting!", color = Color.Gray)
+                        }
+                    }
+                    items(chats) { chat ->
+                        val otherUser = chat.participants.firstOrNull() // Simplify for now
+                        val chatName = if (chat.isGroupChat) chat.chatName else otherUser?.username ?: "Unknown"
+                        
+                        ChatResultItem(
+                            chatName = chatName,
+                            lastMessage = chat.latestMessage?.content ?: "Start chatting!",
+                            onClick = { onNavigateToChat(chat._id) }
+                        )
+                    }
+                }
             }
         }
     }
@@ -147,7 +154,7 @@ fun FriendRequestItem(username: String) {
 @Composable
 fun SearchResultItem(
     username: String,
-    onChatClick: () -> Unit = {}
+    onChatClick: () -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -178,6 +185,38 @@ fun SearchResultItem(
             modifier = Modifier.height(36.dp)
         ) {
             Text("Chat")
+        }
+    }
+}
+
+@Composable
+fun ChatResultItem(
+    chatName: String,
+    lastMessage: String,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color(0xFF1B1B20), RoundedCornerShape(16.dp))
+            .clickable { onClick() }
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(48.dp)
+                .clip(CircleShape)
+                .background(Color(0xFF35343A)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(Icons.Default.Person, contentDescription = null, tint = Color.White)
+        }
+        Spacer(modifier = Modifier.width(16.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(chatName, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(lastMessage, color = Color.Gray, fontSize = 14.sp, maxLines = 1)
         }
     }
 }

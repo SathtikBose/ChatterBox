@@ -1,27 +1,34 @@
 package com.buildstack.chatterbox.ui.chat
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.buildstack.chatterbox.data.network.MessageDto
+import com.buildstack.chatterbox.data.network.RetrofitClient
+import com.buildstack.chatterbox.data.network.SendMessageRequest
+import com.buildstack.chatterbox.data.network.TokenManager
 import com.buildstack.chatterbox.network.SocketManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-data class Message(
-    val id: String,
-    val senderId: String,
-    val text: String,
-    val isMine: Boolean,
-    val imageUrl: String? = null
-)
+sealed class ChatState {
+    object Idle : ChatState()
+    object Loading : ChatState()
+    data class Error(val message: String) : ChatState()
+}
 
-class ChatViewModel(
-    private val socketManager: SocketManager = SocketManager()
-) : ViewModel() {
+class ChatViewModel(application: Application) : AndroidViewModel(application) {
+    private val apiService = RetrofitClient.apiService
+    private val socketManager = SocketManager()
+    private val tokenManager = TokenManager(application)
+    
+    private val _chatState = MutableStateFlow<ChatState>(ChatState.Idle)
+    val chatState: StateFlow<ChatState> = _chatState.asStateFlow()
 
-    private val _messages = MutableStateFlow<List<Message>>(emptyList())
-    val messages: StateFlow<List<Message>> = _messages.asStateFlow()
+    private val _messages = MutableStateFlow<List<MessageDto>>(emptyList())
+    val messages: StateFlow<List<MessageDto>> = _messages.asStateFlow()
 
     private val _isTyping = MutableStateFlow(false)
     val isTyping: StateFlow<Boolean> = _isTyping.asStateFlow()
@@ -29,59 +36,64 @@ class ChatViewModel(
     private val _inputText = MutableStateFlow("")
     val inputText: StateFlow<String> = _inputText.asStateFlow()
 
+    private var currentChatId: String = ""
+    
+    val currentUserId: String = tokenManager.getUserId() ?: ""
+
     init {
-        // connect with dummy token for now
-        socketManager.connect("dummy_token")
-        setupSocketListeners()
+        val token = tokenManager.getToken() ?: ""
+        socketManager.connect(token)
     }
 
-    private fun setupSocketListeners() {
-        val socket = socketManager.getSocket()
-        socket?.on("receiveMessage") { args ->
-            val data = args[0] as? org.json.JSONObject
-            data?.let {
-                val newMsg = Message(
-                    id = it.optString("id", System.currentTimeMillis().toString()),
-                    senderId = it.optString("senderId", "other"),
-                    text = it.optString("text", ""),
-                    isMine = false
-                )
-                _messages.value = listOf(newMsg) + _messages.value
-            }
-        }
-        
-        socket?.on("typing") {
-            _isTyping.value = true
-        }
+    fun initializeChat(chatId: String) {
+        currentChatId = chatId
+        socketManager.joinChat(chatId)
+        fetchMessages(chatId)
+    }
 
-        socket?.on("stopTyping") {
-            _isTyping.value = false
+    private fun fetchMessages(chatId: String) {
+        viewModelScope.launch {
+            _chatState.value = ChatState.Loading
+            try {
+                val response = apiService.allMessages(chatId)
+                if (response.isSuccessful && response.body() != null) {
+                    _messages.value = response.body()!!
+                    _chatState.value = ChatState.Idle
+                } else {
+                    _chatState.value = ChatState.Error("Failed to fetch messages")
+                }
+            } catch (e: Exception) {
+                _chatState.value = ChatState.Error(e.message ?: "Unknown error")
+            }
         }
     }
 
     fun onInputTextChanged(text: String) {
         _inputText.value = text
-        socketManager.getSocket()?.emit("typing")
-        // normally you'd debounce a stopTyping event
     }
 
     fun sendMessage() {
-        if (_inputText.value.isBlank()) return
+        if (_inputText.value.isBlank() || currentChatId.isBlank()) return
         val text = _inputText.value
-        val msg = Message(
-            id = System.currentTimeMillis().toString(),
-            senderId = "me",
-            text = text,
-            isMine = true
-        )
-        _messages.value = listOf(msg) + _messages.value
         _inputText.value = ""
         
-        val json = org.json.JSONObject().apply {
-            put("text", text)
+        viewModelScope.launch {
+            try {
+                val response = apiService.sendMessage(SendMessageRequest(text, currentChatId))
+                if (response.isSuccessful && response.body() != null) {
+                    val newMessage = response.body()!!
+                    _messages.value = _messages.value + newMessage
+                } else {
+                    _chatState.value = ChatState.Error("Failed to send message")
+                }
+            } catch (e: Exception) {
+                _chatState.value = ChatState.Error(e.message ?: "Unknown error")
+            }
         }
-        socketManager.getSocket()?.emit("sendMessage", json)
-        socketManager.getSocket()?.emit("stopTyping")
+    }
+    
+    fun resetState() {
+        _chatState.value = ChatState.Idle
     }
 
     override fun onCleared() {
