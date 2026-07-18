@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 
 sealed class ChatState {
     object Idle : ChatState()
@@ -146,7 +148,8 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                     inputStream?.copyTo(fileOut)
                 }
                 
-                val requestFile = okhttp3.RequestBody.create(okhttp3.MediaType.parse("image/*"), tempFile)
+                val mediaType = "image/*".toMediaTypeOrNull()
+                val requestFile = tempFile.asRequestBody(mediaType)
                 val body = okhttp3.MultipartBody.Part.createFormData("image", tempFile.name, requestFile)
                 
                 val uploadResponse = apiService.uploadImage(body)
