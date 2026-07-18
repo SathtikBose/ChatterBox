@@ -51,6 +51,7 @@ data class MessageDto(
     @SerializedName("text") val content: String,
     @SerializedName("chatId") val chatElement: com.google.gson.JsonElement?,
     val imageUrl: String? = null,
+    val replyTo: MessageDto? = null,
     val createdAt: String
 ) {
     val chat: ChatDto?
@@ -76,7 +77,17 @@ data class MessageDto(
 data class SendMessageRequest(
     val chatId: String,
     val content: String,
-    val imageUrl: String? = null
+    val imageUrl: String? = null,
+    val replyTo: String? = null
+)
+
+data class BlockUserRequest(
+    val userIdToBlock: String
+)
+
+data class ChangePasswordRequest(
+    val oldPassword: String,
+    val newPassword: String
 )
 
 data class AccessChatRequest(

@@ -66,18 +66,18 @@ fun FriendsScreen(
             TopAppBar(
                 title = { Text("Chats") },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF131318),
-                    titleContentColor = Color(0xFFE4E1E9),
-                    navigationIconContentColor = Color(0xFFE4E1E9)
+                    containerColor = MaterialTheme.colorScheme.background,
+                    titleContentColor = MaterialTheme.colorScheme.onBackground,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onBackground
                 ),
                 actions = {
                     IconButton(onClick = onNavigateToProfile) {
-                        Icon(Icons.Default.Person, contentDescription = "Profile", tint = Color(0xFFBDFF00))
+                        Icon(Icons.Default.Person, contentDescription = "Profile", tint = MaterialTheme.colorScheme.primary)
                     }
                 }
             )
         },
-        containerColor = Color(0xFF131318)
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         PullToRefreshBox(
             isRefreshing = friendsState == FriendsState.Loading,
@@ -106,14 +106,14 @@ fun FriendsScreen(
                 placeholder = { Text("Search by username") },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFFBDFF00),
-                    unfocusedBorderColor = Color(0xFF434933),
-                    focusedContainerColor = Color(0xFF1B1B20),
-                    unfocusedContainerColor = Color(0xFF1B1B20),
-                    focusedPlaceholderColor = Color(0xFF8C9479),
-                    unfocusedPlaceholderColor = Color(0xFF8C9479),
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                    focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onBackground
                 ),
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.fillMaxWidth()
@@ -123,11 +123,11 @@ fun FriendsScreen(
             
             if (friendsState == FriendsState.Loading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = Color(0xFFBDFF00))
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                 }
             } else if (searchQuery.isNotBlank() && friendsState is FriendsState.UsersLoaded) {
                 val loadedState = friendsState as FriendsState.UsersLoaded
-                Text("Search Results", color = Color(0xFFC2CAAD), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                Text("Search Results", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(16.dp))
 
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -140,14 +140,14 @@ fun FriendsScreen(
                 }
             } else if (searchQuery.isBlank() && friendsState is FriendsState.ChatsLoaded) {
                 val loadedState = friendsState as FriendsState.ChatsLoaded
-                Text("Recent Chats", color = Color(0xFFC2CAAD), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                Text("Recent Chats", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(16.dp))
 
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     val chats = loadedState.chats
                     if (chats.isEmpty()) {
                         item {
-                            Text("No recent chats. Search for friends to start chatting!", color = Color.Gray)
+                            Text("No recent chats. Search for friends to start chatting!", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                     items(chats) { chat ->
@@ -175,7 +175,7 @@ fun SearchResultItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color(0xFF1B1B20), RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(16.dp))
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -183,20 +183,20 @@ fun SearchResultItem(
             modifier = Modifier
                 .size(48.dp)
                 .clip(CircleShape)
-                .background(Color(0xFF35343A)),
+                .background(MaterialTheme.colorScheme.surfaceVariant),
             contentAlignment = Alignment.Center
         ) {
-            Icon(Icons.Default.Person, contentDescription = null, tint = Color.White)
+            Icon(Icons.Default.Person, contentDescription = null, tint = MaterialTheme.colorScheme.onBackground)
         }
         Spacer(modifier = Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(username, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Text(username, color = MaterialTheme.colorScheme.onBackground, fontSize = 16.sp, fontWeight = FontWeight.Bold)
         }
         
         Button(
             onClick = onChatClick,
             shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF35343A), contentColor = Color.White),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant, contentColor = MaterialTheme.colorScheme.onBackground),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
             modifier = Modifier.height(36.dp)
         ) {
@@ -214,7 +214,7 @@ fun ChatResultItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color(0xFF1B1B20), RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(16.dp))
             .clickable { onClick() }
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -223,16 +223,16 @@ fun ChatResultItem(
             modifier = Modifier
                 .size(48.dp)
                 .clip(CircleShape)
-                .background(Color(0xFF35343A)),
+                .background(MaterialTheme.colorScheme.surfaceVariant),
             contentAlignment = Alignment.Center
         ) {
-            Icon(Icons.Default.Person, contentDescription = null, tint = Color.White)
+            Icon(Icons.Default.Person, contentDescription = null, tint = MaterialTheme.colorScheme.onBackground)
         }
         Spacer(modifier = Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(chatName, color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Text(chatName, color = MaterialTheme.colorScheme.onBackground, fontSize = 16.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(4.dp))
-            Text(lastMessage, color = Color.Gray, fontSize = 14.sp, maxLines = 1)
+            Text(lastMessage, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp, maxLines = 1)
         }
     }
 }

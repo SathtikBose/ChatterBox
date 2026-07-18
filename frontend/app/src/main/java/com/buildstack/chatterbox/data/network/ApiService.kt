@@ -27,6 +27,12 @@ interface ApiService {
     @PUT("/api/user/profile")
     suspend fun updateProfile(@Body request: UpdateProfileRequest): Response<UserDto>
 
+    @POST("/api/user/block")
+    suspend fun blockUser(@Body request: BlockUserRequest): Response<GenericResponse>
+
+    @PUT("/api/user/password")
+    suspend fun changePassword(@Body request: ChangePasswordRequest): Response<GenericResponse>
+
     @Multipart
     @POST("/api/upload")
     suspend fun uploadImage(@Part image: okhttp3.MultipartBody.Part): Response<UploadResponse>

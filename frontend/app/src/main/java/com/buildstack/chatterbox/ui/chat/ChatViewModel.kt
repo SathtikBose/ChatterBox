@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.buildstack.chatterbox.data.network.MessageDto
 import com.buildstack.chatterbox.data.network.RetrofitClient
 import com.buildstack.chatterbox.data.network.SendMessageRequest
+import com.buildstack.chatterbox.data.network.BlockUserRequest
 import com.buildstack.chatterbox.data.network.TokenManager
 import com.buildstack.chatterbox.network.SocketManager
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -37,6 +38,12 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _inputText = MutableStateFlow("")
     val inputText: StateFlow<String> = _inputText.asStateFlow()
+
+    private val _replyingToMessage = MutableStateFlow<MessageDto?>(null)
+    val replyingToMessage: StateFlow<MessageDto?> = _replyingToMessage.asStateFlow()
+
+    private val _isUserBlocked = MutableStateFlow(false)
+    val isUserBlocked: StateFlow<Boolean> = _isUserBlocked.asStateFlow()
 
     private var currentChatId: String = ""
     
@@ -119,14 +126,38 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         _inputText.value = text
     }
 
+    fun setReplyingToMessage(message: MessageDto?) {
+        _replyingToMessage.value = message
+    }
+
+    fun blockUser() {
+        if (otherUserId.isBlank()) return
+        viewModelScope.launch {
+            _chatState.value = ChatState.Loading
+            try {
+                val response = apiService.blockUser(BlockUserRequest(otherUserId))
+                if (response.isSuccessful) {
+                    _isUserBlocked.value = true
+                    _chatState.value = ChatState.Idle
+                } else {
+                    _chatState.value = ChatState.Error("Failed to block user")
+                }
+            } catch (e: Exception) {
+                _chatState.value = ChatState.Error(e.message ?: "Unknown error")
+            }
+        }
+    }
+
     fun sendMessage() {
         if (_inputText.value.isBlank() || currentChatId.isBlank()) return
         val text = _inputText.value
+        val replyToId = _replyingToMessage.value?._id
         _inputText.value = ""
+        _replyingToMessage.value = null
         
         viewModelScope.launch {
             try {
-                val response = apiService.sendMessage(SendMessageRequest(currentChatId, text))
+                val response = apiService.sendMessage(SendMessageRequest(currentChatId, text, null, replyToId))
                 if (response.isSuccessful && response.body() != null) {
                     val newMessage = response.body()!!
                     _messages.value = _messages.value + newMessage
@@ -160,8 +191,10 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 val uploadResponse = apiService.uploadImage(body)
                 if (uploadResponse.isSuccessful && uploadResponse.body() != null) {
                     val imageUrl = uploadResponse.body()!!.imageUrl
+                    val replyToId = _replyingToMessage.value?._id
+                    _replyingToMessage.value = null
                     
-                    val response = apiService.sendMessage(SendMessageRequest(currentChatId, "", imageUrl))
+                    val response = apiService.sendMessage(SendMessageRequest(currentChatId, "", imageUrl, replyToId))
                     if (response.isSuccessful && response.body() != null) {
                         val newMessage = response.body()!!
                         _messages.value = _messages.value + newMessage

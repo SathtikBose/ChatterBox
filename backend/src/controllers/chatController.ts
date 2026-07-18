@@ -87,7 +87,7 @@ export const fetchChats = async (req: Request, res: Response) => {
 };
 
 export const sendMessage = async (req: Request, res: Response) => {
-  const { content, chatId, imageUrl } = req.body;
+  const { content, chatId, imageUrl, replyTo } = req.body;
 
   if ((!content && !imageUrl) || !chatId) {
     return res.status(400).json({ message: "Invalid data passed into request" });
@@ -101,6 +101,7 @@ export const sendMessage = async (req: Request, res: Response) => {
     text: content,
     imageUrl: imageUrl,
     chatId: chatId,
+    replyTo: replyTo,
   };
 
   try {
@@ -108,6 +109,9 @@ export const sendMessage = async (req: Request, res: Response) => {
 
     message = await message.populate("sender", "username profilePic");
     message = await message.populate("chatId");
+    if (replyTo) {
+      message = await message.populate({ path: "replyTo", populate: { path: "sender", select: "username profilePic" } });
+    }
     // @ts-ignore
     message = await User.populate(message, {
       path: "chatId.participants",
@@ -132,6 +136,10 @@ export const allMessages = async (req: Request, res: Response) => {
           path: "participants",
           select: "username profilePic email isOnline lastOnline"
         }
+      })
+      .populate({
+        path: "replyTo",
+        populate: { path: "sender", select: "username profilePic" }
       });
     res.json(messages);
   } catch (error: any) {

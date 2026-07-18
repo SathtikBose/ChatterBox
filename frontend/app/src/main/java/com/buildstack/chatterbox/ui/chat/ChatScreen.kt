@@ -15,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Photo
@@ -49,7 +50,9 @@ fun ChatScreen(
     val isUserOnline by viewModel.isUserOnline.collectAsState()
     val isTyping by viewModel.isTyping.collectAsState()
     val inputText by viewModel.inputText.collectAsState()
+    val replyingToMessage by viewModel.replyingToMessage.collectAsState()
     val chatState by viewModel.chatState.collectAsState()
+    var showMenu by remember { mutableStateOf(false) }
     
     val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
         // Could be implemented by saving bitmap to a temp file and passing URI to sendImageMessage
@@ -81,10 +84,10 @@ fun ChatScreen(
                             modifier = Modifier
                                 .size(40.dp)
                                 .clip(CircleShape)
-                                .background(Color(0xFF35343A)),
+                                .background(MaterialTheme.colorScheme.surfaceVariant),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(Icons.Default.Person, contentDescription = null, tint = Color.White)
+                            Icon(Icons.Default.Person, contentDescription = null, tint = MaterialTheme.colorScheme.onBackground)
                         }
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
@@ -92,19 +95,19 @@ fun ChatScreen(
                             val otherUser = messages.firstOrNull { it.sender._id != viewModel.currentUserId }?.sender
                             val titleName = otherUser?.username ?: "Chat"
 
-                            Text(titleName, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            Text(titleName, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
                             if (isTyping) {
-                                Text("Typing...", fontSize = 12.sp, color = Color(0xFFBDFF00))
+                                Text("Typing...", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
                             } else if (isUserOnline) {
-                                Text("Online", fontSize = 12.sp, color = Color.Gray)
+                                Text("Online", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             } else {
-                                Text("Offline", fontSize = 12.sp, color = Color.Gray)
+                                Text("Offline", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                         Spacer(modifier = Modifier.width(8.dp))
                         // Green dot indicator for online status
                         if (isUserOnline) {
-                            Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(Color(0xFFBDFF00)))
+                            Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary))
                         }
                     }
                 },
@@ -114,60 +117,95 @@ fun ChatScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { /* More options */ }) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "Options")
+                    Box {
+                        IconButton(onClick = { showMenu = true }) {
+                            Icon(Icons.Default.MoreVert, contentDescription = "Options")
+                        }
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Block User") },
+                                onClick = {
+                                    showMenu = false
+                                    viewModel.blockUser()
+                                }
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF131318),
-                    titleContentColor = Color(0xFFE4E1E9),
-                    navigationIconContentColor = Color(0xFFE4E1E9),
-                    actionIconContentColor = Color(0xFFE4E1E9)
+                    containerColor = MaterialTheme.colorScheme.background,
+                    titleContentColor = MaterialTheme.colorScheme.onBackground,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onBackground,
+                    actionIconContentColor = MaterialTheme.colorScheme.onBackground
                 )
             )
         },
         bottomBar = {
-            Row(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color(0xFF131318))
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .background(MaterialTheme.colorScheme.background)
             ) {
+                if (replyingToMessage != null) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.background)
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(modifier = Modifier.weight(1f)) {
+                            ReplyMessagePreview(replyTo = replyingToMessage!!)
+                        }
+                        IconButton(onClick = { viewModel.setReplyingToMessage(null) }) {
+                            Icon(Icons.Default.Close, contentDescription = "Cancel reply", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                 IconButton(onClick = { cameraLauncher.launch(null) }) {
-                    Icon(Icons.Default.CameraAlt, contentDescription = "Camera", tint = Color(0xFFC2CAAD))
+                    Icon(Icons.Default.CameraAlt, contentDescription = "Camera", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 IconButton(onClick = { galleryLauncher.launch("image/*") }) {
-                    Icon(Icons.Default.Photo, contentDescription = "Gallery", tint = Color(0xFFC2CAAD))
+                    Icon(Icons.Default.Photo, contentDescription = "Gallery", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 OutlinedTextField(
                     value = inputText,
                     onValueChange = { viewModel.onInputTextChanged(it) },
-                    placeholder = { Text("Message...", color = Color(0xFF8C9479)) },
+                    placeholder = { Text("Message...", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                     modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
                     shape = RoundedCornerShape(24.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color(0xFFBDFF00),
-                        unfocusedBorderColor = Color(0xFF434933),
-                        focusedContainerColor = Color(0xFF1B1B20),
-                        unfocusedContainerColor = Color(0xFF1B1B20),
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                        focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onBackground
                     )
                 )
                 IconButton(
                     onClick = { viewModel.sendMessage() },
-                    modifier = Modifier.background(Color(0xFFBDFF00), CircleShape)
+                    modifier = Modifier.background(MaterialTheme.colorScheme.primary, CircleShape)
                 ) {
-                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send", tint = Color.Black)
+                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send", tint = MaterialTheme.colorScheme.onPrimary)
+                }
                 }
             }
         },
-        containerColor = Color(0xFF131318)
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         if (chatState == ChatState.Loading) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = Color(0xFFBDFF00))
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             }
         } else {
             LazyColumn(
@@ -181,7 +219,9 @@ fun ChatScreen(
                 item { Spacer(modifier = Modifier.height(16.dp)) }
                 // Reverse messages because LazyColumn is reversed
                 items(messages.reversed()) { msg ->
-                    SwipeToReplyMessage(msg, isMine = msg.sender._id == viewModel.currentUserId)
+                    SwipeToReplyMessage(msg, isMine = msg.sender._id == viewModel.currentUserId) {
+                        viewModel.setReplyingToMessage(it)
+                    }
                 }
             }
         }
@@ -189,7 +229,7 @@ fun ChatScreen(
 }
 
 @Composable
-fun SwipeToReplyMessage(message: MessageDto, isMine: Boolean) {
+fun SwipeToReplyMessage(message: MessageDto, isMine: Boolean, onReply: (MessageDto) -> Unit) {
     val offsetX = remember { Animatable(0f) }
     val coroutineScope = rememberCoroutineScope()
     
@@ -201,7 +241,7 @@ fun SwipeToReplyMessage(message: MessageDto, isMine: Boolean) {
                     onDragEnd = {
                         coroutineScope.launch {
                             if (offsetX.value < -100f) {
-                                // Trigger reply action here
+                                onReply(message)
                             }
                             offsetX.animateTo(0f) // Micro-interaction snap back
                         }
@@ -232,11 +272,15 @@ fun SentMessage(message: MessageDto) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
         Box(
             modifier = Modifier
-                .background(Color(0xFFBDFF00), RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 16.dp, bottomEnd = 4.dp))
+                .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 16.dp, bottomEnd = 4.dp))
                 .padding(12.dp)
                 .widthIn(max = 280.dp)
         ) {
             Column {
+                if (message.replyTo != null) {
+                    ReplyMessagePreview(replyTo = message.replyTo)
+                    Spacer(modifier = Modifier.height(4.dp))
+                }
                 if (!message.imageUrl.isNullOrEmpty()) {
                     AsyncImage(
                         model = message.imageUrl,
@@ -252,7 +296,7 @@ fun SentMessage(message: MessageDto) {
                     }
                 }
                 if (message.content.isNotBlank()) {
-                    Text(message.content, color = Color.Black, fontSize = 15.sp)
+                    Text(message.content, color = MaterialTheme.colorScheme.onPrimary, fontSize = 15.sp)
                 }
             }
         }
@@ -264,11 +308,15 @@ fun ReceivedMessage(message: MessageDto) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
         Box(
             modifier = Modifier
-                .background(Color(0xFF1B1B20), RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 4.dp, bottomEnd = 16.dp))
+                .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 4.dp, bottomEnd = 16.dp))
                 .padding(12.dp)
                 .widthIn(max = 280.dp)
         ) {
             Column {
+                if (message.replyTo != null) {
+                    ReplyMessagePreview(replyTo = message.replyTo)
+                    Spacer(modifier = Modifier.height(4.dp))
+                }
                 if (!message.imageUrl.isNullOrEmpty()) {
                     AsyncImage(
                         model = message.imageUrl,
@@ -284,9 +332,43 @@ fun ReceivedMessage(message: MessageDto) {
                     }
                 }
                 if (message.content.isNotBlank()) {
-                    Text(message.content, color = Color.White, fontSize = 15.sp)
+                    Text(message.content, color = MaterialTheme.colorScheme.onBackground, fontSize = 15.sp)
                 }
             }
         }
     }
 }
+
+@Composable
+fun ReplyMessagePreview(replyTo: MessageDto) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f))
+            .height(IntrinsicSize.Min)
+    ) {
+        Box(
+            modifier = Modifier
+                .width(4.dp)
+                .fillMaxHeight()
+                .background(MaterialTheme.colorScheme.primary)
+        )
+        Column(modifier = Modifier.padding(8.dp).weight(1f)) {
+            Text(replyTo.sender.username ?: "User", color = MaterialTheme.colorScheme.primary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(replyTo.content.ifBlank { "Photo" }, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp, maxLines = 1)
+        }
+        if (!replyTo.imageUrl.isNullOrEmpty()) {
+            AsyncImage(
+                model = replyTo.imageUrl,
+                contentDescription = null,
+                modifier = Modifier
+                    .size(50.dp)
+                    .clip(RoundedCornerShape(topEnd = 8.dp, bottomEnd = 8.dp)),
+                contentScale = ContentScale.Crop
+            )
+        }
+    }
+}
+

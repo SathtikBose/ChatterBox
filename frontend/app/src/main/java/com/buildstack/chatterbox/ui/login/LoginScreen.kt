@@ -47,29 +47,29 @@ fun LoginScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF131318))
+            .background(MaterialTheme.colorScheme.background)
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text("Chatter Box", fontSize = 40.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
+        Text("Chatter Box", fontSize = 40.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onBackground)
         Spacer(modifier = Modifier.height(8.dp))
-        Text("Connect with your vibe.", color = Color(0xFFBDFF00))
+        Text("Connect with your vibe.", color = MaterialTheme.colorScheme.primary)
         Spacer(modifier = Modifier.height(48.dp))
         
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
-            label = { Text("Email", color = Color(0xFF8C9479)) },
+            label = { Text("Email", color = MaterialTheme.colorScheme.onSurfaceVariant) },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color(0xFFBDFF00),
-                unfocusedBorderColor = Color(0xFF434933),
-                focusedContainerColor = Color(0xFF1B1B20),
-                unfocusedContainerColor = Color(0xFF1B1B20),
-                focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                unfocusedTextColor = MaterialTheme.colorScheme.onBackground
             )
         )
         Spacer(modifier = Modifier.height(16.dp))
@@ -77,23 +77,23 @@ fun LoginScreen(
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
-            label = { Text("Password", color = Color(0xFF8C9479)) },
+            label = { Text("Password", color = MaterialTheme.colorScheme.onSurfaceVariant) },
             visualTransformation = PasswordVisualTransformation(),
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color(0xFFBDFF00),
-                unfocusedBorderColor = Color(0xFF434933),
-                focusedContainerColor = Color(0xFF1B1B20),
-                unfocusedContainerColor = Color(0xFF1B1B20),
-                focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                unfocusedTextColor = MaterialTheme.colorScheme.onBackground
             )
         )
         
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
             TextButton(onClick = onNavigateToForgotPassword) {
-                Text("Forgot Password?", color = Color(0xFFC2CAAD))
+                Text("Forgot Password?", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
         
@@ -111,19 +111,19 @@ fun LoginScreen(
                 .fillMaxWidth()
                 .height(56.dp),
             shape = RoundedCornerShape(16.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFBDFF00)),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
             enabled = authState != AuthState.Loading
         ) {
             if (authState == AuthState.Loading) {
-                CircularProgressIndicator(color = Color.Black, modifier = Modifier.size(24.dp))
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
             } else {
-                Text("Login", color = Color.Black, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Text("Login", color = MaterialTheme.colorScheme.onPrimary, fontSize = 16.sp, fontWeight = FontWeight.Bold)
             }
         }
         Spacer(modifier = Modifier.height(16.dp))
         
         TextButton(onClick = onNavigateToRegister) {
-            Text("Don't have an account? Register", color = Color(0xFFBDFF00))
+            Text("Don't have an account? Register", color = MaterialTheme.colorScheme.primary)
         }
     }
 }
