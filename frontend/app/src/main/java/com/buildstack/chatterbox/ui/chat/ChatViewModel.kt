@@ -98,7 +98,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                     val otherUser = fetchedMessages.firstOrNull { it.sender._id != currentUserId }?.sender
                     if (otherUser != null) {
                         otherUserId = otherUser._id
-                        _isUserOnline.value = otherUser.isOnline
+                        _isUserOnline.value = otherUser.isOnline == true
                     }
                     _chatState.value = ChatState.Idle
                 } else {

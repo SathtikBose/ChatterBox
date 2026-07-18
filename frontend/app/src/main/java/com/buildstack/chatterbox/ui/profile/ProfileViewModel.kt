@@ -46,7 +46,7 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
                         user._id,
                         user.username,
                         user.email,
-                        user.profilePic
+                        user.profilePic ?: ""
                     )
                     
                     _profileState.value = ProfileState.Success("Profile updated successfully")

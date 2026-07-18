@@ -32,9 +32,9 @@ data class UserDto(
     val _id: String,
     val username: String,
     val email: String,
-    val profilePic: String,
-    val isOnline: Boolean,
-    val lastOnline: String
+    val profilePic: String? = "",
+    val isOnline: Boolean? = false,
+    val lastOnline: String? = null
 )
 
 data class ChatDto(
