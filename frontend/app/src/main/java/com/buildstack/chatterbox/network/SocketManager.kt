@@ -21,6 +21,9 @@ class SocketManager {
     private val _userOffline = MutableStateFlow<String?>(null)
     val userOffline: StateFlow<String?> = _userOffline
 
+    private val _newMessage = MutableStateFlow<com.buildstack.chatterbox.data.network.MessageDto?>(null)
+    val newMessage: StateFlow<com.buildstack.chatterbox.data.network.MessageDto?> = _newMessage
+
     fun connect(token: String) {
         if (mSocket?.connected() == true) return
         
@@ -59,6 +62,20 @@ class SocketManager {
                 }
             }
 
+            mSocket?.on("message recieved") { args ->
+                if (args.isNotEmpty()) {
+                    val obj = args[0]
+                    if (obj is org.json.JSONObject) {
+                        try {
+                            val message = com.google.gson.Gson().fromJson(obj.toString(), com.buildstack.chatterbox.data.network.MessageDto::class.java)
+                            _newMessage.value = message
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
+                }
+            }
+
             mSocket?.connect()
         } catch (e: URISyntaxException) {
             e.printStackTrace()
@@ -74,6 +91,16 @@ class SocketManager {
 
     fun joinChat(chatId: String) {
         mSocket?.emit("join chat", chatId)
+    }
+
+    fun emitNewMessage(message: com.buildstack.chatterbox.data.network.MessageDto) {
+        try {
+            val jsonString = com.google.gson.Gson().toJson(message)
+            val jsonObject = org.json.JSONObject(jsonString)
+            mSocket?.emit("new message", jsonObject)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     fun disconnect() {

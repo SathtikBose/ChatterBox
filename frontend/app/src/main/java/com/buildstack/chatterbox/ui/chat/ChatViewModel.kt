@@ -39,10 +39,44 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     private var currentChatId: String = ""
     
     val currentUserId: String = tokenManager.getUserId() ?: ""
+    private var otherUserId: String = ""
+
+    private val _isUserOnline = MutableStateFlow(false)
+    val isUserOnline: StateFlow<Boolean> = _isUserOnline.asStateFlow()
 
     init {
         val token = tokenManager.getToken() ?: ""
         socketManager.connect(token)
+        if (currentUserId.isNotEmpty()) {
+            socketManager.setupUser(currentUserId)
+        }
+        
+        viewModelScope.launch {
+            socketManager.newMessage.collect { msg ->
+                if (msg != null && msg.chat?._id == currentChatId) {
+                    val currentList = _messages.value.toMutableList()
+                    if (!currentList.any { it._id == msg._id }) {
+                        _messages.value = currentList + msg
+                    }
+                }
+            }
+        }
+        
+        viewModelScope.launch {
+            socketManager.userOnline.collect { userId ->
+                if (userId != null && userId == otherUserId) {
+                    _isUserOnline.value = true
+                }
+            }
+        }
+        
+        viewModelScope.launch {
+            socketManager.userOffline.collect { userId ->
+                if (userId != null && userId == otherUserId) {
+                    _isUserOnline.value = false
+                }
+            }
+        }
     }
 
     fun initializeChat(chatId: String) {
@@ -57,7 +91,13 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 val response = apiService.allMessages(chatId)
                 if (response.isSuccessful && response.body() != null) {
-                    _messages.value = response.body()!!
+                    val fetchedMessages = response.body()!!
+                    _messages.value = fetchedMessages
+                    val otherUser = fetchedMessages.firstOrNull { it.sender._id != currentUserId }?.sender
+                    if (otherUser != null) {
+                        otherUserId = otherUser._id
+                        _isUserOnline.value = otherUser.isOnline
+                    }
                     _chatState.value = ChatState.Idle
                 } else {
                     _chatState.value = ChatState.Error("Failed to fetch messages")
@@ -83,6 +123,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 if (response.isSuccessful && response.body() != null) {
                     val newMessage = response.body()!!
                     _messages.value = _messages.value + newMessage
+                    socketManager.emitNewMessage(newMessage)
                 } else {
                     _chatState.value = ChatState.Error("Failed to send message")
                 }

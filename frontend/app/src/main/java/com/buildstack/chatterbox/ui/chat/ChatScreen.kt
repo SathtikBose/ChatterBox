@@ -44,6 +44,7 @@ fun ChatScreen(
 ) {
     val context = LocalContext.current
     val messages by viewModel.messages.collectAsState()
+    val isUserOnline by viewModel.isUserOnline.collectAsState()
     val isTyping by viewModel.isTyping.collectAsState()
     val inputText by viewModel.inputText.collectAsState()
     val chatState by viewModel.chatState.collectAsState()
@@ -90,7 +91,7 @@ fun ChatScreen(
                             Text(titleName, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
                             if (isTyping) {
                                 Text("Typing...", fontSize = 12.sp, color = Color(0xFFBDFF00))
-                            } else if (otherUser?.isOnline == true) {
+                            } else if (isUserOnline) {
                                 Text("Online", fontSize = 12.sp, color = Color.Gray)
                             } else {
                                 Text("Offline", fontSize = 12.sp, color = Color.Gray)
@@ -98,8 +99,7 @@ fun ChatScreen(
                         }
                         Spacer(modifier = Modifier.width(8.dp))
                         // Green dot indicator for online status
-                        val isOnline = messages.firstOrNull { it.sender._id != viewModel.currentUserId }?.sender?.isOnline == true
-                        if (isOnline) {
+                        if (isUserOnline) {
                             Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(Color(0xFFBDFF00)))
                         }
                     }
