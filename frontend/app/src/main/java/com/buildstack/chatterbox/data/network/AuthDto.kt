@@ -39,10 +39,10 @@ data class UserDto(
 
 data class ChatDto(
     val _id: String,
-    val chatName: String,
-    val isGroupChat: Boolean,
+    val chatName: String? = null,
+    val isGroupChat: Boolean? = false,
     val participants: List<UserDto>,
-    val latestMessage: MessageDto?
+    @SerializedName("lastMessage") val latestMessage: MessageDto?
 )
 
 data class MessageDto(

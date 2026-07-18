@@ -20,7 +20,12 @@ export const accessChat = async (req: Request, res: Response) => {
     ],
   })
     .populate("participants", "-password")
-    .populate("lastMessage");
+    .populate({
+      path: "lastMessage",
+      populate: {
+        path: "chatId"
+      }
+    });
 
   // @ts-ignore
   isChat = await User.populate(isChat, {
@@ -53,7 +58,12 @@ export const fetchChats = async (req: Request, res: Response) => {
     // @ts-ignore
     Chat.find({ participants: { $elemMatch: { $eq: req.user._id } } })
       .populate("participants", "-password")
-      .populate("lastMessage")
+      .populate({
+        path: "lastMessage",
+        populate: {
+          path: "chatId"
+        }
+      })
       .sort({ updatedAt: -1 })
       .then(async (results: any) => {
         // @ts-ignore
