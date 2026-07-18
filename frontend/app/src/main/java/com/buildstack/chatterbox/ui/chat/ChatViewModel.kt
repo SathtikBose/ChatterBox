@@ -49,8 +49,13 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     init {
         val token = tokenManager.getToken() ?: ""
         socketManager.connect(token)
-        if (currentUserId.isNotEmpty()) {
-            socketManager.setupUser(currentUserId)
+        
+        viewModelScope.launch {
+            socketManager.isConnected.collect { connected ->
+                if (connected && currentUserId.isNotEmpty()) {
+                    socketManager.setupUser(currentUserId)
+                }
+            }
         }
         
         viewModelScope.launch {
