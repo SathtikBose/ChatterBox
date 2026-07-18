@@ -108,7 +108,13 @@ export const allMessages = async (req: Request, res: Response) => {
   try {
     const messages = await Message.find({ chatId: req.params.chatId })
       .populate("sender", "username profilePic email isOnline lastOnline")
-      .populate("chatId");
+      .populate({
+        path: "chatId",
+        populate: {
+          path: "participants",
+          select: "username profilePic email isOnline lastOnline"
+        }
+      });
     res.json(messages);
   } catch (error: any) {
     res.status(400).json({ message: error.message });
