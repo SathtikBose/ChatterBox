@@ -37,6 +37,12 @@ export const accessChat = async (req: Request, res: Response) => {
     select: "username profilePic email isOnline lastOnline",
   });
 
+  // @ts-ignore
+  isChat = await Message.populate(isChat, {
+    path: "lastMessage.replyTo",
+    populate: { path: "sender", select: "username profilePic" }
+  });
+
   if (isChat.length > 0) {
     res.send(isChat[0]);
   } else {
@@ -78,6 +84,12 @@ export const fetchChats = async (req: Request, res: Response) => {
         results = await User.populate(results, {
           path: "lastMessage.sender",
           select: "username profilePic email isOnline lastOnline",
+        });
+        
+        // @ts-ignore
+        results = await Message.populate(results, {
+          path: "lastMessage.replyTo",
+          populate: { path: "sender", select: "username profilePic" }
         });
         res.status(200).send(results);
       });

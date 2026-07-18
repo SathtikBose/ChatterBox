@@ -51,9 +51,16 @@ data class MessageDto(
     @SerializedName("text") val content: String,
     @SerializedName("chatId") val chatElement: com.google.gson.JsonElement?,
     val imageUrl: String? = null,
-    val replyTo: MessageDto? = null,
+    @SerializedName("replyTo") val replyToElement: com.google.gson.JsonElement? = null,
     val createdAt: String
 ) {
+    val replyTo: MessageDto?
+        get() = try {
+            if (replyToElement?.isJsonObject == true) {
+                com.google.gson.Gson().fromJson(replyToElement, MessageDto::class.java)
+            } else null
+        } catch (e: Exception) { null }
+
     val chat: ChatDto?
         get() = try {
             if (chatElement?.isJsonObject == true) {
