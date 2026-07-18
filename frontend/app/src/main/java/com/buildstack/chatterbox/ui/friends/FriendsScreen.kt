@@ -151,7 +151,7 @@ fun FriendsScreen(
                         }
                     }
                     items(chats) { chat ->
-                        val otherUser = chat.participants.firstOrNull() // Simplify for now
+                        val otherUser = chat.participants.firstOrNull { it._id != viewModel.currentUserId }
                         val chatName = if (chat.isGroupChat == true) chat.chatName ?: "Group" else otherUser?.username ?: "Unknown"
                         
                         ChatResultItem(

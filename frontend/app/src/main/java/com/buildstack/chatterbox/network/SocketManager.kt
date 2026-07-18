@@ -64,14 +64,12 @@ class SocketManager {
 
             mSocket?.on("message recieved") { args ->
                 if (args.isNotEmpty()) {
-                    val obj = args[0]
-                    if (obj is org.json.JSONObject) {
-                        try {
-                            val message = com.google.gson.Gson().fromJson(obj.toString(), com.buildstack.chatterbox.data.network.MessageDto::class.java)
-                            _newMessage.value = message
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                        }
+                    try {
+                        val jsonString = args[0].toString()
+                        val message = com.google.gson.Gson().fromJson(jsonString, com.buildstack.chatterbox.data.network.MessageDto::class.java)
+                        _newMessage.value = message
+                    } catch (e: Exception) {
+                        e.printStackTrace()
                     }
                 }
             }

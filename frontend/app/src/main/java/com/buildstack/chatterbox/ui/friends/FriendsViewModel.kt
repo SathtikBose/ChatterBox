@@ -23,6 +23,8 @@ sealed class FriendsState {
 
 class FriendsViewModel(application: Application) : AndroidViewModel(application) {
     private val apiService = RetrofitClient.apiService
+    private val tokenManager = com.buildstack.chatterbox.data.network.TokenManager(application)
+    val currentUserId: String = tokenManager.getUserId() ?: ""
 
     private val _friendsState = MutableStateFlow<FriendsState>(FriendsState.Idle)
     val friendsState: StateFlow<FriendsState> = _friendsState.asStateFlow()
