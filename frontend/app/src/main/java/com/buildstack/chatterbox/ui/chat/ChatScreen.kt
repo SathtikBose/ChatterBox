@@ -277,8 +277,7 @@ fun SentMessage(message: MessageDto) {
                 .widthIn(max = 280.dp)
         ) {
             Column {
-                if (message.replyTo != null) {
-                    ReplyMessagePreview(replyTo = message.replyTo)
+                val reply = message.replyTo`n                if (reply != null) {`n                    ReplyMessagePreview(replyTo = reply)
                     Spacer(modifier = Modifier.height(4.dp))
                 }
                 if (!message.imageUrl.isNullOrEmpty()) {
@@ -313,8 +312,7 @@ fun ReceivedMessage(message: MessageDto) {
                 .widthIn(max = 280.dp)
         ) {
             Column {
-                if (message.replyTo != null) {
-                    ReplyMessagePreview(replyTo = message.replyTo)
+                val reply = message.replyTo`n                if (reply != null) {`n                    ReplyMessagePreview(replyTo = reply)
                     Spacer(modifier = Modifier.height(4.dp))
                 }
                 if (!message.imageUrl.isNullOrEmpty()) {
@@ -371,4 +369,5 @@ fun ReplyMessagePreview(replyTo: MessageDto) {
         }
     }
 }
+
 
