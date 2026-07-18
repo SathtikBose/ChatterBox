@@ -50,12 +50,14 @@ data class MessageDto(
     val sender: UserDto,
     @SerializedName("text") val content: String,
     @SerializedName("chatId") val chat: ChatDto?,
+    val imageUrl: String? = null,
     val createdAt: String
 )
 
 data class SendMessageRequest(
     val chatId: String,
-    val content: String
+    val content: String,
+    val imageUrl: String? = null
 )
 
 data class AccessChatRequest(

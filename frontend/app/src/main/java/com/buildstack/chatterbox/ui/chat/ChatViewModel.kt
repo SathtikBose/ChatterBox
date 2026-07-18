@@ -133,6 +133,44 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
     
+    fun sendImageMessage(context: android.content.Context, uri: android.net.Uri) {
+        if (currentChatId.isBlank()) return
+        
+        viewModelScope.launch {
+            _chatState.value = ChatState.Loading
+            try {
+                val contentResolver = context.contentResolver
+                val inputStream = contentResolver.openInputStream(uri)
+                val tempFile = java.io.File(context.cacheDir, "upload_image_${System.currentTimeMillis()}.jpg")
+                tempFile.outputStream().use { fileOut ->
+                    inputStream?.copyTo(fileOut)
+                }
+                
+                val requestFile = okhttp3.RequestBody.create(okhttp3.MediaType.parse("image/*"), tempFile)
+                val body = okhttp3.MultipartBody.Part.createFormData("image", tempFile.name, requestFile)
+                
+                val uploadResponse = apiService.uploadImage(body)
+                if (uploadResponse.isSuccessful && uploadResponse.body() != null) {
+                    val imageUrl = uploadResponse.body()!!.imageUrl
+                    
+                    val response = apiService.sendMessage(SendMessageRequest(currentChatId, "", imageUrl))
+                    if (response.isSuccessful && response.body() != null) {
+                        val newMessage = response.body()!!
+                        _messages.value = _messages.value + newMessage
+                        socketManager.emitNewMessage(newMessage)
+                        _chatState.value = ChatState.Idle
+                    } else {
+                        _chatState.value = ChatState.Error("Failed to send image")
+                    }
+                } else {
+                    _chatState.value = ChatState.Error("Failed to upload image")
+                }
+            } catch (e: Exception) {
+                _chatState.value = ChatState.Error(e.message ?: "Unknown error")
+            }
+        }
+    }
+    
     fun resetState() {
         _chatState.value = ChatState.Idle
     }

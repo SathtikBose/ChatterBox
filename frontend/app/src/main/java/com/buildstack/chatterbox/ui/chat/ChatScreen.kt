@@ -31,6 +31,8 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 import com.buildstack.chatterbox.data.network.MessageDto
@@ -50,11 +52,13 @@ fun ChatScreen(
     val chatState by viewModel.chatState.collectAsState()
     
     val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
-        // Handle bitmap
+        // Could be implemented by saving bitmap to a temp file and passing URI to sendImageMessage
     }
     
     val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        // Handle uri
+        if (uri != null) {
+            viewModel.sendImageMessage(context, uri)
+        }
     }
 
     LaunchedEffect(friendId) {
@@ -215,16 +219,16 @@ fun SwipeToReplyMessage(message: MessageDto, isMine: Boolean) {
             modifier = Modifier.offset { IntOffset(offsetX.value.roundToInt(), 0) }
         ) {
             if (isMine) {
-                SentMessage(message.content)
+                SentMessage(message)
             } else {
-                ReceivedMessage(message.content)
+                ReceivedMessage(message)
             }
         }
     }
 }
 
 @Composable
-fun SentMessage(text: String) {
+fun SentMessage(message: MessageDto) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
         Box(
             modifier = Modifier
@@ -232,13 +236,31 @@ fun SentMessage(text: String) {
                 .padding(12.dp)
                 .widthIn(max = 280.dp)
         ) {
-            Text(text, color = Color.Black, fontSize = 15.sp)
+            Column {
+                if (!message.imageUrl.isNullOrEmpty()) {
+                    AsyncImage(
+                        model = message.imageUrl,
+                        contentDescription = "Sent image",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 200.dp)
+                            .clip(RoundedCornerShape(8.dp)),
+                        contentScale = ContentScale.Crop
+                    )
+                    if (message.content.isNotBlank()) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                    }
+                }
+                if (message.content.isNotBlank()) {
+                    Text(message.content, color = Color.Black, fontSize = 15.sp)
+                }
+            }
         }
     }
 }
 
 @Composable
-fun ReceivedMessage(text: String) {
+fun ReceivedMessage(message: MessageDto) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
         Box(
             modifier = Modifier
@@ -246,7 +268,25 @@ fun ReceivedMessage(text: String) {
                 .padding(12.dp)
                 .widthIn(max = 280.dp)
         ) {
-            Text(text, color = Color.White, fontSize = 15.sp)
+            Column {
+                if (!message.imageUrl.isNullOrEmpty()) {
+                    AsyncImage(
+                        model = message.imageUrl,
+                        contentDescription = "Received image",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 200.dp)
+                            .clip(RoundedCornerShape(8.dp)),
+                        contentScale = ContentScale.Crop
+                    )
+                    if (message.content.isNotBlank()) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                    }
+                }
+                if (message.content.isNotBlank()) {
+                    Text(message.content, color = Color.White, fontSize = 15.sp)
+                }
+            }
         }
     }
 }

@@ -17,10 +17,14 @@ interface ApiService {
 
     // Users
     @GET("/api/users")
-    suspend fun searchUsers(@retrofit2.http.Query("search") search: String): Response<List<UserDto>>
+    suspend fun searchUsers(@Query("search") search: String): Response<List<UserDto>>
 
-    @retrofit2.http.PUT("/api/users/profile")
+    @PUT("/api/user/profile")
     suspend fun updateProfile(@Body request: UpdateProfileRequest): Response<UserDto>
+
+    @Multipart
+    @POST("/api/upload")
+    suspend fun uploadImage(@Part image: okhttp3.MultipartBody.Part): Response<UploadResponse>
 
     // Chats
     @POST("/api/chats")
