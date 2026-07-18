@@ -26,8 +26,7 @@
     "multer": "^2.2.0",
     "multer-storage-cloudinary": "^4.0.0",
     "resend": "^6.17.2",
-    "socket.io": "^4.8.3",
-    "xss-clean": "^0.1.4"
+    "socket.io": "^4.8.3"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
