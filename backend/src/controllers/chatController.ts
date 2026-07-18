@@ -23,7 +23,11 @@ export const accessChat = async (req: Request, res: Response) => {
     .populate({
       path: "lastMessage",
       populate: {
-        path: "chatId"
+        path: "chatId",
+        populate: {
+          path: "participants",
+          select: "username profilePic email isOnline lastOnline"
+        }
       }
     });
 
@@ -61,7 +65,11 @@ export const fetchChats = async (req: Request, res: Response) => {
       .populate({
         path: "lastMessage",
         populate: {
-          path: "chatId"
+          path: "chatId",
+          populate: {
+            path: "participants",
+            select: "username profilePic email isOnline lastOnline"
+          }
         }
       })
       .sort({ updatedAt: -1 })
