@@ -48,8 +48,8 @@ data class ChatDto(
 data class MessageDto(
     val _id: String,
     val sender: UserDto,
-    val content: String,
-    val chat: ChatDto,
+    @SerializedName("text") val content: String,
+    @SerializedName("chatId") val chat: ChatDto?,
     val createdAt: String
 )
 

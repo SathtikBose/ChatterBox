@@ -25,7 +25,7 @@ export const accessChat = async (req: Request, res: Response) => {
   // @ts-ignore
   isChat = await User.populate(isChat, {
     path: "lastMessage.sender",
-    select: "username profilePic email",
+    select: "username profilePic email isOnline lastOnline",
   });
 
   if (isChat.length > 0) {
@@ -59,7 +59,7 @@ export const fetchChats = async (req: Request, res: Response) => {
         // @ts-ignore
         results = await User.populate(results, {
           path: "lastMessage.sender",
-          select: "username profilePic email",
+          select: "username profilePic email isOnline lastOnline",
         });
         res.status(200).send(results);
       });
@@ -93,7 +93,7 @@ export const sendMessage = async (req: Request, res: Response) => {
     // @ts-ignore
     message = await User.populate(message, {
       path: "chatId.participants",
-      select: "username profilePic email",
+      select: "username profilePic email isOnline lastOnline",
     });
 
     await Chat.findByIdAndUpdate(req.body.chatId, { lastMessage: message });
@@ -107,7 +107,7 @@ export const sendMessage = async (req: Request, res: Response) => {
 export const allMessages = async (req: Request, res: Response) => {
   try {
     const messages = await Message.find({ chatId: req.params.chatId })
-      .populate("sender", "username profilePic email")
+      .populate("sender", "username profilePic email isOnline lastOnline")
       .populate("chatId");
     res.json(messages);
   } catch (error: any) {

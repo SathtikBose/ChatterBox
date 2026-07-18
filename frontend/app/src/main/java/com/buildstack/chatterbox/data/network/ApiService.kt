@@ -30,7 +30,7 @@ interface ApiService {
     suspend fun fetchChats(): Response<List<ChatDto>>
 
     // Messages
-    @GET("/api/chats/{chatId}")
+    @GET("/api/chats/message/{chatId}")
     suspend fun allMessages(@retrofit2.http.Path("chatId") chatId: String): Response<List<MessageDto>>
 
     @POST("/api/chats/message")
