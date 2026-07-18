@@ -79,7 +79,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         
         viewModelScope.launch {
             try {
-                val response = apiService.sendMessage(SendMessageRequest(text, currentChatId))
+                val response = apiService.sendMessage(SendMessageRequest(currentChatId, text))
                 if (response.isSuccessful && response.body() != null) {
                     val newMessage = response.body()!!
                     _messages.value = _messages.value + newMessage
