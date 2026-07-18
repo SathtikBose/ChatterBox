@@ -4,6 +4,11 @@ import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.PUT
+import retrofit2.http.Query
+import retrofit2.http.Multipart
+import retrofit2.http.Part
+import retrofit2.http.Path
 
 interface ApiService {
     @POST("/api/auth/register")
@@ -35,13 +40,8 @@ interface ApiService {
 
     // Messages
     @GET("/api/chats/message/{chatId}")
-    suspend fun allMessages(@retrofit2.http.Path("chatId") chatId: String): Response<List<MessageDto>>
+    suspend fun allMessages(@Path("chatId") chatId: String): Response<List<MessageDto>>
 
     @POST("/api/chats/message")
     suspend fun sendMessage(@Body request: SendMessageRequest): Response<MessageDto>
-
-    // Upload
-    @retrofit2.http.Multipart
-    @POST("/api/upload")
-    suspend fun uploadImage(@retrofit2.http.Part image: okhttp3.MultipartBody.Part): Response<UploadResponse>
 }
